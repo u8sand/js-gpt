@@ -66,6 +66,25 @@ const initialPrecondition = {
   ],
 }
 
+function Message({ role, content }: { role: string, content: string }) {
+  const kind = role === 'system' ? 'System'
+    : role === 'user' && content.startsWith('Q:') ? 'User Query'
+    : role === 'assistant' && content.startsWith('F:') ? 'Assistant Function'
+    : role === 'user' && content.startsWith('R:') ? 'Execution Result'
+    : role === 'user' && content.startsWith('E:') ? 'Execution Error'
+    : role === 'assistant' && content.startsWith('A:') ? 'Assistant Answer'
+    : null
+  return (
+    <div className="collapse collapse-plus bg-base-100">
+      <input type="checkbox" defaultChecked={kind === 'User Query' || kind === 'Assistant Answer'} />
+      <div className="collapse-title text-xl font-medium">{kind}</div>
+      <div className="collapse-content whitespace-pre-line">
+        <p>{role === 'system' ? content : content.slice(3)}</p>
+      </div>
+    </div>
+  )
+}
+
 export default function Home() {
   const ref = React.useRef<Record<string, boolean>>({})
   const [openapiKey, setOpenapiKey] = useLocalStorage('OPENAPI_KEY', '')
@@ -73,11 +92,13 @@ export default function Home() {
   const [message, setMessage] = React.useState('')
   const [chats, setChats] = React.useState<Record<string, {
     speaker: 'welcome' | 'user' | 'assistant-program' | 'js-engine' | 'assistant',
+    n_preconditioning_messages: number,
     model: string,
     temperature: number,
     messages: { role: string, content : string }[],
   }>>({ ['0']: {
     messages: [],
+    n_preconditioning_messages: initialPrecondition.messages.length,
     model: initialPrecondition.model,
     temperature: initialPrecondition.temperature,
     speaker: 'welcome',
@@ -86,7 +107,7 @@ export default function Home() {
   const preconditionParsed = React.useMemo(() => SerializedChatGPTPrecondition.safeParse(precondition), [precondition])
   useAsyncEffect(async (isMounted) => {
     for (const chatId in chats) {
-      const { speaker, ...body } = chats[chatId]
+      const { speaker, n_preconditioning_messages: _, ...body } = chats[chatId]
       if (speaker === 'assistant-program') {
         if (!(chatId in ref.current)) {
           if (!isMounted()) return
@@ -113,6 +134,7 @@ export default function Home() {
                 speaker: 'user',
                 model: cc.model,
                 temperature: cc.temperature,
+                n_preconditioning_messages: cc.n_preconditioning_messages,
                 messages: [...cc.messages, {
                   role: message1.role,
                   // assistant omits prefix altogether, we consider it an answer
@@ -126,6 +148,7 @@ export default function Home() {
                 speaker: 'js-engine',
                 model: cc.model,
                 temperature: cc.temperature,
+                n_preconditioning_messages: cc.n_preconditioning_messages,
                 messages: [...cc.messages, { role: message1.role, content: message1.content }],
               }
             }))
@@ -148,6 +171,7 @@ export default function Home() {
                 speaker: 'assistant',
                 model: cc.model,
                 temperature: cc.temperature,
+                n_preconditioning_messages: cc.n_preconditioning_messages,
                 messages: [...cc.messages, { role: 'user', content: result }],
               }
             }))
@@ -176,6 +200,7 @@ export default function Home() {
                   speaker: 'user',
                   model: cc.model,
                   temperature: cc.temperature,
+                  n_preconditioning_messages: cc.n_preconditioning_messages,
                   messages: [...cc.messages, { role: message2.role, content: message2.content }],
                 }
               }
@@ -246,24 +271,14 @@ export default function Home() {
                 </div>
               </div>
             : <div className="flex-grow flex flex-col">
-                {chats[currentChat].messages.map(({ role, content }, i) => {
-                  const kind = role === 'system' ? 'System Preconditioning'
-                    : role === 'user' && content.startsWith('Q:') ? 'User Query'
-                    : role === 'assistant' && content.startsWith('F:') ? 'Assistant Function'
-                    : role === 'user' && content.startsWith('R:') ? 'Execution Result'
-                    : role === 'user' && content.startsWith('E:') ? 'Execution Error'
-                    : role === 'assistant' && content.startsWith('A:') ? 'Assistant Answer'
-                    : null
-                  return (
-                    <div key={i} className="collapse collapse-plus bg-base-100">
-                      <input type="checkbox" defaultChecked={kind === 'User Query' || kind === 'Assistant Answer'} />
-                      <div className="collapse-title text-xl font-medium">{kind}</div>
-                      <div className="collapse-content whitespace-pre-line">
-                        <p>{content.slice(3)}</p>
-                      </div>
-                    </div>
-                  )
-                })}
+                <div className="collapse collapse-plus bg-base-100">
+                  <input type="checkbox" />
+                  <div className="collapse-title text-xl font-medium">Pre-conditioning</div>
+                  <div className="collapse-content">
+                    {chats[currentChat].messages.slice(0, chats[currentChat].n_preconditioning_messages).map(message => <Message {...message} />)}
+                  </div>
+                </div>
+                {chats[currentChat].messages.slice(chats[currentChat].n_preconditioning_messages).map(message => <Message {...message} />)}
               </div>}
             <div className='text-center p-2'>
               <form
@@ -274,11 +289,13 @@ export default function Home() {
                       speaker: 'assistant-program',
                       model: preconditionParsed.data.model,
                       temperature: preconditionParsed.data.temperature, 
+                      n_preconditioning_messages: preconditionParsed.data.messages.length,
                       messages: [...preconditionParsed.data.messages, { role: 'user', content: `Q: ${message}` }],
                     } : {
                       speaker: 'assistant-program',
                       model: cc.model,
                       temperature: cc.temperature,
+                      n_preconditioning_messages: cc.n_preconditioning_messages,
                       messages: [...cc.messages, { role: 'user', content: `Q: ${message}` }],
                     }
                   }))
@@ -312,6 +329,7 @@ export default function Home() {
                 speaker: 'welcome',
                 model: initialPrecondition.model,
                 temperature: initialPrecondition.temperature,
+                n_preconditioning_messages: 0,
                 messages: [],
               } }))
               setCurrentChat(newChatKey)
