@@ -237,7 +237,7 @@ export default function Home() {
                   <div className="prose py-2">
                     <h1 className="font-bold"><span className="text-3xl">JS</span>&nbsp;<span className="text-5xl">GPT</span></h1>
                     <p>GPT--but answers are coded in Javascript and executed. This helps GPT overcome limitations like getting information about *today*, from external places via API, and provide more reliable calculations.</p>
-                    <p>NOTE: This is a client-side application, all communication happens with <a href="https://platform.openai.com/">OpenAI</a>, all persistent state is stored in <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage">localStorage</a>, all execution happens in <b>your</b> browser.</p>
+                    <p>NOTE: This is a client-side application, all communication happens with <a href="https://platform.openai.com/">OpenAI</a>, all persistent state is stored in <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage">localStorage</a>, all execution happens in <b>your</b> browser. <b>HOWEVER</b>, information is sent to OpenAI so care should still be taken with sensitive information or credentials.</p>
                   </div>
                   <div className="prose py-2">
                     <h2 className="text-2xl">Settings</h2>
