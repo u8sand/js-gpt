@@ -12,6 +12,8 @@ NOTE: This is a client-side application, all communication happens with OpenAI, 
 ![A screenshot of the app in action](./public/demo1.png)
 
 ### What is the product of the prime Fibonacci numbers below 1000?
+Note that when asked to OpenAI's ChatGPT directly, it confidently produces an answer which is wrong, but js-GPT gets it right.
+
 ![A screenshot of the app in action](./public/demo2.png)
 
 ### How many stars on GitHub?
