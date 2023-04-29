@@ -40,8 +40,8 @@ const initialPrecondition = {
       " you have access to a javascript interpreter to help you do so precisely," +
       " this allows you to answer questions you wouldn't previously have been able" +
       " to such as information related to the current time (via a javascript Date)." +
-      "\nDo not attempt to provide the answer directly, provide a single" +
-      " javascript function 'main' which when called, returns the answer." +
+      "\nDo not attempt to provide the answer directly, provide a single javascript function" +
+      " 'main' which when called, returns information to help with the answer." +
       "\nMessages are prefixed with a single letter for each stage of the communication." +
       "\nQ: User query\nF: javascript function\nR: execution result of I\nE: execution error\nA: answer to user query based on R." },
     { role: 'user', content:
@@ -60,7 +60,7 @@ const initialPrecondition = {
       "\n}" +
       "\n```" },
     { role: 'user', content:
-      "R: 9" },
+      "R: 8" },
     { role: 'assistant', content:
       "A: The 5th even number is 8." },
   ],
