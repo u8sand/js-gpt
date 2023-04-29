@@ -4,6 +4,7 @@ import { z } from 'zod'
 import classNames from 'classnames'
 import useLocalStorage from '@/utils/localStorage'
 import { serializeError } from 'serialize-error'
+import useAsyncEffect from 'use-async-effect'
 
 const stringToJSON = z.string().transform((serialized, ctx) => {
   try {
@@ -78,13 +79,14 @@ export default function Home() {
   }>>({ ['0']: { messages: [], model: initialPrecondition.model, temperature: initialPrecondition.temperature, speaker: 'welcome' } })
   const [currentChat, setCurrentChat] = React.useState('0')
   const preconditionParsed = React.useMemo(() => SerializedChatGPTPrecondition.safeParse(precondition), [precondition])
-  React.useEffect(() => {
+  useAsyncEffect(async (isMounted) => {
     for (const chatId in chats) {
       const { speaker, ...body } = chats[chatId]
       if (speaker === 'assistant-program') {
         if (!(chatId in ref.current)) {
-          Object.assign(ref.current, { [chatId]: true }) 
-          fetch('https://api.openai.com/v1/chat/completions', {
+          if (!isMounted()) return
+          Object.assign(ref.current, { [chatId]: true })
+          const req1 = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -96,68 +98,69 @@ export default function Home() {
               temperature: body.temperature,
               messages: body.messages.map(({ role, content }) => ({ role, content })),
             }),
-          }).then((res) => res.json()).then(async (res) => {
-            const message = res.choices[0].message
-            setChats(({ [currentChat]: cc, ...chats }) => ({
-              ...chats, [currentChat]: {
-                speaker: 'js-engine',
-                model: cc.model,
-                temperature: cc.temperature,
-                messages: [...cc.messages, { internalRole: 'assistant-program', role: message.role, content: message.content }],
-              }
-            }))
-            const code_expr = new RegExp('```(.+?)```', 'gms')
-            const code_match = code_expr.exec(message.content)
-            let result: string
-            try {
-              const code = (code_match as RegExpExecArray)[1]
-              const ctx: any = {}
-              eval(`${code}\nObject.assign(ctx, { result: main() })`)
-              if (ctx.result instanceof Promise) ctx.result = await ctx.result
-              if (typeof ctx.result !== 'string') ctx.result = JSON.stringify(ctx.result)
-              result = `R: ${ctx.result}`
-            } catch (e) {
-              result = `E: ${serializeError(e)}`
-            }
-            console.log({ result })
-            setChats(({ [currentChat]: cc, ...chats }) => ({
-              ...chats, [currentChat]: {
-                speaker: 'assistant',
-                model: cc.model,
-                temperature: cc.temperature,
-                messages: [...cc.messages, { internalRole: 'js-engine', role: 'user', content: result }],
-              }
-            }))
-            return await fetch('https://api.openai.com/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${openapiKey}`,
-              },
-              body: JSON.stringify({
-                ...body,
-                messages: [
-                  ...body.messages.map(({ role, content }) => ({ role, content })),
-                  message,
-                  { role: 'user', content: result },
-                ],
-              }),
-            })
-          }).then((res) => res.json()).then((res) => {
-            const message = res.choices[0].message
-            setChats(({ [currentChat]: cc, ...chats }) => {
-              delete ref.current[chatId]
-              return {
-                ...chats, [currentChat]: {
-                  speaker: 'user',
-                  model: cc.model,
-                  temperature: cc.temperature,
-                  messages: [...cc.messages, { internalRole: 'assistant', role: message.role, content: message.content }],
-                }
-              }
-            })
           })
+          const res1 = await req1.json()
+          const message1 = res1.choices[0].message
+          setChats(({ [currentChat]: cc, ...chats }) => ({
+            ...chats, [currentChat]: {
+              speaker: 'js-engine',
+              model: cc.model,
+              temperature: cc.temperature,
+              messages: [...cc.messages, { internalRole: 'assistant-program', role: message1.role, content: message1.content }],
+            }
+          }))
+          const code_expr = new RegExp('```(.+?)```', 'gms')
+          const code_match = code_expr.exec(message1.content)
+          let result: string
+          try {
+            const code = (code_match as RegExpExecArray)[1]
+            const ctx: any = {}
+            eval(`${code}\nObject.assign(ctx, { result: main() })`)
+            if (ctx.result instanceof Promise) ctx.result = await ctx.result
+            if (typeof ctx.result !== 'string') ctx.result = JSON.stringify(ctx.result)
+            result = `R: ${ctx.result}`
+          } catch (e) {
+            result = `E: ${serializeError(e)}`
+          }
+          console.log({ result })
+          setChats(({ [currentChat]: cc, ...chats }) => ({
+            ...chats, [currentChat]: {
+              speaker: 'assistant',
+              model: cc.model,
+              temperature: cc.temperature,
+              messages: [...cc.messages, { internalRole: 'js-engine', role: 'user', content: result }],
+            }
+          }))
+          const req2 = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${openapiKey}`,
+            },
+            body: JSON.stringify({
+              ...body,
+              messages: [
+                ...body.messages.map(({ role, content }) => ({ role, content })),
+                message1,
+                { role: 'user', content: result },
+              ],
+            }),
+          })
+          const res2 = await req2.json()
+          const message2 = res2.choices[0].message
+          setChats(({ [currentChat]: cc, ...chats }) => {
+            delete ref.current[chatId]
+            return {
+              ...chats, [currentChat]: {
+                speaker: 'user',
+                model: cc.model,
+                temperature: cc.temperature,
+                messages: [...cc.messages, { internalRole: 'assistant', role: message2.role, content: message2.content }],
+              }
+            }
+          })
+          if (!isMounted()) return
         }
       }
     }
