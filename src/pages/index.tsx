@@ -66,6 +66,20 @@ const initialPrecondition = {
   ],
 }
 
+const initialChats = { ['0']: {
+  messages: [],
+  n_preconditioning_messages: initialPrecondition.messages.length,
+  model: initialPrecondition.model,
+  temperature: initialPrecondition.temperature,
+  speaker: 'welcome'
+} } as Record<string, {
+  speaker: 'welcome' | 'user' | 'assistant-program' | 'js-engine' | 'assistant',
+  n_preconditioning_messages: number,
+  model: string,
+  temperature: number,
+  messages: { role: string, content : string }[],
+}>
+
 function Message({ role, content }: { role: string, content: string }) {
   const kind = role === 'system' ? 'System'
     : role === 'user' && content.startsWith('Q:') ? 'User Query'
@@ -90,19 +104,7 @@ export default function Home() {
   const [openapiKey, setOpenapiKey] = useLocalStorage('OPENAPI_KEY', '')
   const [precondition, setPrecondition] = React.useState(JSON.stringify(initialPrecondition))
   const [message, setMessage] = React.useState('')
-  const [chats, setChats] = React.useState<Record<string, {
-    speaker: 'welcome' | 'user' | 'assistant-program' | 'js-engine' | 'assistant',
-    n_preconditioning_messages: number,
-    model: string,
-    temperature: number,
-    messages: { role: string, content : string }[],
-  }>>({ ['0']: {
-    messages: [],
-    n_preconditioning_messages: initialPrecondition.messages.length,
-    model: initialPrecondition.model,
-    temperature: initialPrecondition.temperature,
-    speaker: 'welcome',
-  } })
+  const [chats, setChats] = React.useState(initialChats)
   const [currentChat, setCurrentChat] = React.useState('0')
   const preconditionParsed = React.useMemo(() => SerializedChatGPTPrecondition.safeParse(precondition), [precondition])
   useAsyncEffect(async (isMounted) => {
@@ -341,8 +343,10 @@ export default function Home() {
                 </li>)}
             <li className='flex-grow'>&nbsp;</li>
             <li><hr /></li>
-            <li><a>Clear conversations</a></li>
-            <li><a>Settings</a></li>
+            <li><a onClick={evt => {
+              setCurrentChat(() => '0')
+              setChats(() => initialChats)
+            }}>Clear conversations</a></li>
           </ul>
         </div>
       </div>
