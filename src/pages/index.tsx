@@ -3,6 +3,7 @@ import Head from 'next/head'
 import { z } from 'zod'
 import classNames from 'classnames'
 import useLocalStorage from '@/utils/localStorage'
+import { serializeError } from 'serialize-error'
 
 const stringToJSON = z.string().transform((serialized, ctx) => {
   try {
@@ -112,9 +113,11 @@ export default function Home() {
               const code = (code_match as RegExpExecArray)[1]
               const ctx: any = {}
               eval(`${code}\nObject.assign(ctx, { result: main() })`)
-              result = `R: ${JSON.stringify(ctx.result instanceof Promise ? await ctx.result : ctx.result)}`
+              if (ctx.result instanceof Promise) ctx.result = await ctx.result
+              if (typeof ctx.result !== 'string') ctx.result = JSON.stringify(ctx.result)
+              result = `R: ${ctx.result}`
             } catch (e) {
-              result = `E: ${JSON.stringify({ error: (e as Error).toString() })}`
+              result = `E: ${serializeError(e)}`
             }
             console.log({ result })
             setChats(({ [currentChat]: cc, ...chats }) => ({
