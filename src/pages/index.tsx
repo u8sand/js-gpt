@@ -70,6 +70,11 @@ const initialPrecondition = {
   ],
 }
 
+const examples = [
+  "How many years until 32-bit Unix Timestamps become a problem?",
+  "How many fibonacci numbers are prime below 1000?",
+]
+
 const initialChats = { ['0']: {
   messages: [],
   n_preconditioning_messages: initialPrecondition.messages.length,
@@ -259,11 +264,12 @@ export default function Home() {
             {chats[currentChat].speaker === 'welcome' ?
               <div className="hero flex-grow">
                 <div className="hero-content text-center">
-                  <div className="max-w-md prose">
+                  <div className="prose">
                     <h1 className="font-bold"><span className="text-3xl">JS</span>&nbsp;<span className="text-5xl">GPT</span></h1>
-                    <p className="py-2">GPT--but answers are coded in Javascript and executed. This helps GPT overcome limitations like getting information about *today*, from external places via API, and provide more reliable calculations.</p>
-                    <p className="py-2">NOTE: This is a client-side application, all communication happens with <a href="https://platform.openai.com/">OpenAPI</a>, all persistent state is stored in <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage">localStorage</a>, all execution happens in <b>your</b> browser.</p>
-                    <div className="py-2 flex flex-col">
+                    <p>GPT--but answers are coded in Javascript and executed. This helps GPT overcome limitations like getting information about *today*, from external places via API, and provide more reliable calculations.</p>
+                    <p>NOTE: This is a client-side application, all communication happens with <a href="https://platform.openai.com/">OpenAPI</a>, all persistent state is stored in <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage">localStorage</a>, all execution happens in <b>your</b> browser.</p>
+                    <h2 className="text-2xl">Settings</h2>
+                    <div className="flex flex-col">
                       <div className="form-control w-full max-w-xs self-center">
                         <label className="label">
                           <span className="label-text">OpenAPI Key (stored only on your device)</span>
@@ -274,18 +280,31 @@ export default function Home() {
                           <span className={classNames("label-text", {"text-green-600": !!openapiKey, "text-red-600": !openapiKey})}>required</span>
                         </label>
                       </div>
+                      <div className="form-control">
+                        <label className="label">
+                          <span className="label-text">System pre-conditioning (sent before your first message)</span>
+                        </label>
+                        <textarea className="textarea textarea-bordered h-24" value={precondition} onChange={evt => {setPrecondition(evt.target.value)}}></textarea>
+                        <label className="label">
+                          <span>&nbsp;</span>
+                          <span className={classNames("label-text", {"text-green-600": preconditionParsed.success, "text-red-600": !preconditionParsed.success})}>
+                            {preconditionParsed.success ? 'valid' : preconditionParsed.error.issues.map((issue, i) => <span key={i}>{issue.path.length > 0 ? `${issue.path.join('.')} : ` : null}{issue.message}</span>)}
+                          </span>
+                        </label>
+                      </div>
                     </div>
-                    <div className="form-control">
-                      <label className="label">
-                        <span className="label-text">System pre-conditioning (sent before your first message)</span>
-                      </label>
-                      <textarea className="textarea textarea-bordered h-24" value={precondition} onChange={evt => {setPrecondition(evt.target.value)}}></textarea>
-                      <label className="label">
-                        <span>&nbsp;</span>
-                        <span className={classNames("label-text", {"text-green-600": preconditionParsed.success, "text-red-600": !preconditionParsed.success})}>
-                          {preconditionParsed.success ? 'valid' : preconditionParsed.error.issues.map((issue, i) => <span key={i}>{issue.path.length > 0 ? `${issue.path.join('.')} : ` : null}{issue.message}</span>)}
-                        </span>
-                      </label>
+                    <h2 className="text-2xl">Examples</h2>
+                    <div className="grid grid-cols-2 gap-2">
+                      {examples.map(example => (
+                        <div
+                          className="card bg-gray-200 hover:shadow-lg cursor-pointer"
+                          onClick={() => {setMessage(() => example)}}
+                        >
+                          <div className="card-body items-center text-center">
+                            <p>{example}</p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -323,7 +342,7 @@ export default function Home() {
                       messages: [...cc.messages, { role: 'user', content: `Q: ${message}` }],
                     }
                   }))
-                  setMessage('')
+                  setMessage(() => '')
                 }}
                 className="flex flex-row"
                 style={{ height: `${Math.min(10, Math.max(2, message.split(/\n/g).length)) * 2}em` }}
