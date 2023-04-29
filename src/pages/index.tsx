@@ -5,6 +5,9 @@ import classNames from 'classnames'
 import useLocalStorage from '@/utils/localStorage'
 import { serializeError } from 'serialize-error'
 import useAsyncEffect from 'use-async-effect'
+import dynamic from 'next/dynamic'
+
+const Markdown = dynamic(() => import('@/components/markdown'), { ssr: false })
 
 const stringToJSON = z.string().transform((serialized, ctx) => {
   try {
@@ -36,12 +39,13 @@ const initialPrecondition = {
   temperature: 0.7,
   messages: [
     { role: 'system', content:
-      "You are an AI chatbot tasked with answering user questions," +
-      " you have access to a javascript interpreter to help you do so precisely," +
+      "You are an AI chatbot tasked with answering user questions." +
+      " You have access to a javascript interpreter to help you do so precisely," +
       " this allows you to answer questions you wouldn't previously have been able" +
       " to such as information related to the current time (via a javascript Date)." +
-      "\nDo not attempt to provide the answer directly, provide a single javascript function" +
-      " 'main' which when called, returns information to help with the answer." +
+      "\nDo not attempt to provide the answer directly, first produce a single javascript function" +
+      " 'main' which when called, returns information to help with the answer. Then you can" +
+      " use the result to answer the user. Your answers are rendered with Markdown." +
       "\nMessages are prefixed with a single letter for each stage of the communication." +
       "\nQ: User query\nF: javascript function\nR: execution result of I\nE: execution error\nA: answer to user query based on R." },
     { role: 'user', content:
@@ -62,7 +66,7 @@ const initialPrecondition = {
     { role: 'user', content:
       "R: 8" },
     { role: 'assistant', content:
-      "A: The 5th even number is 8." },
+      "A: The 5th even number is **8**." },
   ],
 }
 
@@ -80,21 +84,24 @@ const initialChats = { ['0']: {
   messages: { role: string, content : string }[],
 }>
 
-function Message({ role, content }: { role: string, content: string }) {
-  const kind = role === 'system' ? 'System'
-    : role === 'user' && content.startsWith('Q:') ? 'User Query'
-    : role === 'assistant' && content.startsWith('F:') ? 'Assistant Function'
-    : role === 'user' && content.startsWith('R:') ? 'Execution Result'
-    : role === 'user' && content.startsWith('E:') ? 'Execution Error'
-    : role === 'assistant' && content.startsWith('A:') ? 'Assistant Answer'
+
+function Message(props: { role: string, content: string }) {
+  const role = props.role === 'system' ? 'System'
+    : props.role === 'user' && props.content.startsWith('Q:') ? 'User Query'
+    : props.role === 'assistant' && props.content.startsWith('F:') ? 'Assistant Function'
+    : props.role === 'user' && props.content.startsWith('R:') ? 'Execution Result'
+    : props.role === 'user' && props.content.startsWith('E:') ? 'Execution Error'
+    : props.role === 'assistant' && props.content.startsWith('A:') ? 'Assistant Answer'
     : null
+  const content = role === 'System' ? props.content
+    : role === 'Assistant Function' ? props.content.slice(3).replaceAll(/```(\n.*?\n```)(\n|$)/gms, '```js$1$2')
+    : role === 'Execution Result' || props.role === 'Execution Error' ? '```' + props.content.slice(3) + '```'
+    : props.content.slice(3)
   return (
     <div className="collapse collapse-plus bg-base-100">
-      <input type="checkbox" defaultChecked={kind === 'User Query' || kind === 'Assistant Answer'} />
-      <div className="collapse-title text-xl font-medium">{kind}</div>
-      <div className="collapse-content whitespace-pre-line">
-        <p>{role === 'system' ? content : content.slice(3)}</p>
-      </div>
+      <input type="checkbox" defaultChecked={role === 'User Query' || role === 'Assistant Answer'} />
+      <div className="collapse-title text-xl font-medium">{role}</div>
+      <div className="collapse-content"><Markdown>{content}</Markdown></div>
     </div>
   )
 }
