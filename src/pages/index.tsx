@@ -107,6 +107,17 @@ export default function Home() {
   const [chats, setChats] = React.useState(initialChats)
   const [currentChat, setCurrentChat] = React.useState('0')
   const preconditionParsed = React.useMemo(() => SerializedChatGPTPrecondition.safeParse(precondition), [precondition])
+  const newChat = React.useCallback(() => {
+    const newChatKey = (Object.keys(chats).reduce((agg, chatKey) => Math.max(agg, +chatKey), 0)+1).toString()
+    setChats((chats) => ({ ...chats, [newChatKey]: {
+      speaker: 'welcome',
+      model: initialPrecondition.model,
+      temperature: initialPrecondition.temperature,
+      n_preconditioning_messages: 0,
+      messages: [],
+    } }))
+    setCurrentChat(newChatKey)
+  }, [chats])
   useAsyncEffect(async (isMounted) => {
     for (const chatId in chats) {
       const { speaker, n_preconditioning_messages: _, ...body } = chats[chatId]
@@ -232,7 +243,7 @@ export default function Home() {
             </div>
             <div className="flex-1"></div>
             <div className="flex-none">
-              <button className="btn btn-square btn-ghost text-4xl">
+              <button className="btn btn-square btn-ghost text-4xl" onClick={evt => {newChat()}}>
                 +
               </button>
             </div>
@@ -325,17 +336,7 @@ export default function Home() {
         <div className="drawer-side">
           <label htmlFor="drawer-1" className="drawer-overlay"></label> 
           <ul className="menu p-4 w-80 bg-base-100 text-base-content">
-            <li><a onClick={() => {
-              const newChatKey = (Object.keys(chats).reduce((agg, chatKey) => Math.max(agg, +chatKey), 0)+1).toString()
-              setChats((chats) => ({ ...chats, [newChatKey]: {
-                speaker: 'welcome',
-                model: initialPrecondition.model,
-                temperature: initialPrecondition.temperature,
-                n_preconditioning_messages: 0,
-                messages: [],
-              } }))
-              setCurrentChat(newChatKey)
-            }}>+ New chat</a></li>
+            <li><a onClick={() => {newChat()}}>+ New chat</a></li>
             {Object.keys(chats)
               .map(chatKey =>
                 <li key={chatKey}>
