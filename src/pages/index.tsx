@@ -102,7 +102,7 @@ function Message(props: { role: string, content: string }) {
     : null
   const content = role === 'System' ? props.content
     : role === 'Assistant Function' ? props.content.slice(3).replaceAll(/```(\n.*?\n```)(\n|$)/gms, '```js$1$2')
-    : role === 'Execution Result' || props.role === 'Execution Error' ? '```' + props.content.slice(3) + '```'
+    : role === 'Execution Result' || props.role === 'Execution Error' ? '```\n' + props.content.slice(3) + '\n```'
     : props.content.slice(3)
   return (
     <div className="collapse collapse-plus bg-base-100">
