@@ -113,7 +113,7 @@ function Message(props: { role: string, content: string }) {
 
 export default function Home() {
   const ref = React.useRef<Record<string, boolean>>({})
-  const [openapiKey, setOpenapiKey] = useLocalStorage('OPENAPI_KEY', '')
+  const [openaiKey, setOpenaiKey] = useLocalStorage('OPENAI_KEY', '')
   const [precondition, setPrecondition] = React.useState(JSON.stringify(initialPrecondition))
   const [message, setMessage] = React.useState('')
   const [chats, setChats] = React.useState(initialChats)
@@ -142,7 +142,7 @@ export default function Home() {
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
-              'Authorization': `Bearer ${openapiKey}`,
+              'Authorization': `Bearer ${openaiKey}`,
             },
             body: JSON.stringify({
               model: body.model,
@@ -205,7 +205,7 @@ export default function Home() {
         }
       }
     }
-  }, [ref, openapiKey, chats])
+  }, [ref, openaiKey, chats])
   return (
     <>
       <Head>
@@ -237,19 +237,19 @@ export default function Home() {
                   <div className="prose py-2">
                     <h1 className="font-bold"><span className="text-3xl">JS</span>&nbsp;<span className="text-5xl">GPT</span></h1>
                     <p>GPT--but answers are coded in Javascript and executed. This helps GPT overcome limitations like getting information about *today*, from external places via API, and provide more reliable calculations.</p>
-                    <p>NOTE: This is a client-side application, all communication happens with <a href="https://platform.openai.com/">OpenAPI</a>, all persistent state is stored in <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage">localStorage</a>, all execution happens in <b>your</b> browser.</p>
+                    <p>NOTE: This is a client-side application, all communication happens with <a href="https://platform.openai.com/">OpenAI</a>, all persistent state is stored in <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage">localStorage</a>, all execution happens in <b>your</b> browser.</p>
                   </div>
                   <div className="prose py-2">
                     <h2 className="text-2xl">Settings</h2>
                   </div>
                   <div className="form-control w-full max-w-xs self-center">
                     <label className="label">
-                      <span className="label-text">OpenAPI Key (stored only on your device)</span>
+                      <span className="label-text">OpenAI Key (stored only on your device)</span>
                     </label>
-                    <input type="password" className="input input-bordered w-full max-w-xs" value={openapiKey} onChange={evt => {setOpenapiKey(() => evt.target.value)}} />
+                    <input type="password" className="input input-bordered w-full max-w-xs" value={openaiKey} onChange={evt => {setOpenaiKey(() => evt.target.value)}} />
                     <label className="label">
                       <span>&nbsp;</span>
-                      <span className={classNames("label-text", {"text-green-600": !!openapiKey, "text-red-600": !openapiKey})}>required</span>
+                      <span className={classNames("label-text", {"text-green-600": !!openaiKey, "text-red-600": !openaiKey})}>required</span>
                     </label>
                   </div>
                   <div className="form-control">
@@ -329,7 +329,7 @@ export default function Home() {
                   style={{ height: `${Math.min(10, Math.max(2, message.split(/\n/g).length)) * 2}em` }}
                 />
                 <div className="flex flex-col justify-end border-gray-300 border-l-0 rounded-l-none border-r-2 border-t-2 border-b-2 rounded-r-md">
-                  <button type="submit" className="btn btn-ghost" disabled={!openapiKey || !message}><svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-1" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
+                  <button type="submit" className="btn btn-ghost" disabled={!openaiKey || !message}><svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-1" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
                 </div>
               </form>
               <span className="prose text-sm">Free Research Preview. JS-GPT may produce inaccurate information about people, places, or facts.</span>

@@ -4,7 +4,7 @@
 
 GPT--but answers are coded in Javascript and executed. This helps GPT overcome limitations like getting information about *today*, from external places via API, and provide more reliable calculations.
 
-NOTE: This is a client-side application, all communication happens with OpenAPI, all persistent state is stored in localStorage, all execution happens in your browser.
+NOTE: This is a client-side application, all communication happens with OpenAI, all persistent state is stored in localStorage, all execution happens in your browser.
 
 ## Example
 ```
