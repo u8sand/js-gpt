@@ -11,7 +11,7 @@ NOTE: This is a client-side application, all communication happens with OpenAI, 
 ### How many years until 32-bit unix timestamps become a problem?
 ![A screenshot of the app in action](./public/demo1.png)
 
-### How many fibonacci numbers are prime below 1000?
+### What is the product of the prime Fibonacci numbers below 1000?
 ![A screenshot of the app in action](./public/demo2.png)
 
 ### How many stars on GitHub?
