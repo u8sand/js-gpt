@@ -13,3 +13,8 @@ NOTE: This is a client-side application, all communication happens with OpenAI, 
 
 ### How many fibonacci numbers are prime below 1000?
 ![A screenshot of the app in action](./public/demo2.png)
+
+### How many stars on GitHub?
+In the future, we might have ways to collect API tokens so that these features are quicker to use.
+
+![A screenshot of the app in action](./public/demo3.png)
