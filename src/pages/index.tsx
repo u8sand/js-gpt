@@ -2,6 +2,7 @@ import React from 'react'
 import Head from 'next/head'
 import { z } from 'zod'
 import classNames from 'classnames'
+import useLocalStorage from '@/utils/localStorage'
 
 const stringToJSON = z.string().transform((serialized, ctx) => {
   try {
@@ -63,7 +64,7 @@ function main() {
 
 export default function Home() {
   const ref = React.useRef<Record<string, boolean>>({})
-  const [openapiKey, setOpenapiKey] = React.useState('')
+  const [openapiKey, setOpenapiKey] = useLocalStorage('OPENAPI_KEY', '')
   const [precondition, setPrecondition] = React.useState(JSON.stringify(initialPrecondition))
   const [message, setMessage] = React.useState('')
   const [chats, setChats] = React.useState<Record<string, {
