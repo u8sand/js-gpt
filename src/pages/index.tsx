@@ -43,30 +43,28 @@ const initialPrecondition = {
       " You have access to a javascript interpreter to help you do so precisely," +
       " this allows you to answer questions you wouldn't previously have been able" +
       " to such as information related to the current time (via a javascript Date)." +
-      "\nDo not attempt to provide the answer directly, first produce a single javascript function" +
-      " 'main' which when called, returns information to help with the answer. Then you can" +
-      " use the result to answer the user. Your answers are rendered with Markdown." +
+      "\nDo not attempt to provide the answer directly, instead produce a single javascript function" +
+      " 'main' which when called, returns your answer as a string." +
+      " Your answers are rendered with Markdown." +
       "\nMessages are prefixed with a single letter for each stage of the communication." +
-      "\nQ: User query\nF: javascript function\nR: execution result of I\nE: execution error\nA: answer to user query based on R." },
+      "\nQ: User query\nF: javascript function\nR: execution result of I\nE: execution error" },
     { role: 'user', content:
       "Q: What is the 5th even number?" },
     { role: 'assistant', content:
       "F:" +
       "\n```" +
-      "\nfunction main() {" +
+      "\nasync function main() {" +
       "\n  let current_number = 0" +
       "\n  let even_number = 0" +
       "\n  while (even_number < 5) {" +
       "\n    if (current_number % 2 == 0) even_number += 1;" +
       "\n    current_number += 1" +
       "\n  }" +
-      "\n  return current_number - 1" +
+      "\n  return `The 5th even number is **${current_number - 1}**`" +
       "\n}" +
       "\n```" },
     { role: 'user', content:
-      "R: 8" },
-    { role: 'assistant', content:
-      "A: The 5th even number is **8**." },
+      "R: The 5th even number is **8**." },
   ],
 }
 
@@ -102,11 +100,11 @@ function Message(props: { role: string, content: string }) {
     : null
   const content = role === 'System' ? props.content
     : role === 'Assistant Function' ? props.content.slice(3).replaceAll(/```(\n.*?\n```)(\n|$)/gms, '```js$1$2')
-    : role === 'Execution Result' || props.role === 'Execution Error' ? '```\n' + props.content.slice(3) + '\n```'
+    : props.role === 'Execution Error' ? '```\n' + props.content.slice(3) + '\n```'
     : props.content.slice(3)
   return (
     <div className="collapse collapse-plus bg-base-100">
-      <input type="checkbox" defaultChecked={role === 'User Query' || role === 'Assistant Answer'} />
+      <input type="checkbox" defaultChecked={role === 'User Query' || role === 'Execution Error' || role === 'Execution Result' || role === 'Assistant Answer'} />
       <div className="collapse-title text-xl font-medium">{role}</div>
       <div className="collapse-content"><Markdown>{content}</Markdown></div>
     </div>
@@ -190,49 +188,19 @@ export default function Home() {
               if (typeof ctx.result !== 'string') ctx.result = JSON.stringify(ctx.result)
               result = `R: ${ctx.result}`
             } catch (e) {
-              result = `E: ${serializeError(e)}`
+              result = `E: ${serializeError(e).message}`
             }
-            console.log({ result })
             setChats(({ [currentChat]: cc, ...chats }) => ({
               ...chats, [currentChat]: {
-                speaker: 'assistant',
+                speaker: 'user',
                 model: cc.model,
                 temperature: cc.temperature,
                 n_preconditioning_messages: cc.n_preconditioning_messages,
                 messages: [...cc.messages, { role: 'user', content: result }],
               }
             }))
-            const req2 = await fetch('https://api.openai.com/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${openapiKey}`,
-              },
-              body: JSON.stringify({
-                ...body,
-                messages: [
-                  ...body.messages,
-                  message1,
-                  { role: 'user', content: result },
-                ],
-              }),
-            })
-            const res2 = await req2.json()
-            const message2 = res2.choices[0].message
-            setChats(({ [currentChat]: cc, ...chats }) => {
-              delete ref.current[chatId]
-              return {
-                ...chats, [currentChat]: {
-                  speaker: 'user',
-                  model: cc.model,
-                  temperature: cc.temperature,
-                  n_preconditioning_messages: cc.n_preconditioning_messages,
-                  messages: [...cc.messages, { role: message2.role, content: message2.content }],
-                }
-              }
-            })
           }
+          delete ref.current[chatId]
           if (!isMounted()) return
         }
       }
