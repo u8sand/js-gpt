@@ -33,32 +33,34 @@ const initialPrecondition = {
   model: 'gpt-3.5-turbo',
   temperature: 0.7,
   messages: [
-    { role: 'system', content: `You are an AI chatbot tasked with answering user questions, you have access to a javascript interpreter to help you do so precisely,
-  this allows you to answer questions you wouldn't previously have been able to such as information related to the current time (via a javascript Date).
-  Do not attempt to provide the answer directly, provide a single javascript function 'main' which when called, returns the answer.
-  
-  Replies should be in stages.
-  1. User: Asks a question.
-  2. Assistant: Javascript function 'main' which returns the answer to the question.
-  3. User: Executes your function using a javascript interpreter.
-  4. Assistant: Using the output from the javascript interpreter, reply to the user with an answer to their question.
-` },
-    { role: 'user', content: 'What is the 5th even number?' },
-    { role: 'assistant', content: `
-\`\`\`
-function main() {
-  let current_number = 0
-  let even_number = 0
-  while (even_number < 5) {
-    if (current_number % 2 == 0) even_number += 1;
-    current_number += 1
-  }
-  return current_number
-}
-\`\`\`
-` },
-    { role: 'user', content: '9' },
-    { role: 'assistant', content: 'The 5th even number is 9.' },
+    { role: 'system', content:
+      "You are an AI chatbot tasked with answering user questions," +
+      " you have access to a javascript interpreter to help you do so precisely," +
+      " this allows you to answer questions you wouldn't previously have been able" +
+      " to such as information related to the current time (via a javascript Date)." +
+      "\nDo not attempt to provide the answer directly, provide a single" +
+      " javascript function 'main' which when called, returns the answer." +
+      "\nMessages are prefixed with a single letter for each stage of the communication." +
+      "\nQ: User query\nF: javascript function\nR: execution result of I\nE: execution error\nA: answer to user query based on R." },
+    { role: 'user', content:
+      "Q: What is the 5th even number?" },
+    { role: 'assistant', content:
+      "F:" +
+      "\n```" +
+      "\nfunction main() {" +
+      "\n  let current_number = 0" +
+      "\n  let even_number = 0" +
+      "\n  while (even_number < 5) {" +
+      "\n    if (current_number % 2 == 0) even_number += 1;" +
+      "\n    current_number += 1" +
+      "\n  }" +
+      "\n  return current_number - 1" +
+      "\n}" +
+      "\n```" },
+    { role: 'user', content:
+      "R: 9" },
+    { role: 'assistant', content:
+      "A: The 5th even number is 8." },
   ],
 }
 
@@ -110,9 +112,9 @@ export default function Home() {
               const code = (code_match as RegExpExecArray)[1]
               const ctx: any = {}
               eval(`${code}\nObject.assign(ctx, { result: main() })`)
-              result = JSON.stringify(ctx.result instanceof Promise ? await ctx.result : ctx.result)
+              result = `R: ${JSON.stringify(ctx.result instanceof Promise ? await ctx.result : ctx.result)}`
             } catch (e) {
-              result = (e as Error).toString()
+              result = `E: ${JSON.stringify({ error: (e as Error).toString() })}`
             }
             console.log({ result })
             setChats(({ [currentChat]: cc, ...chats }) => ({
@@ -228,12 +230,12 @@ export default function Home() {
                       speaker: 'assistant-program',
                       model: preconditionParsed.data.model,
                       temperature: preconditionParsed.data.temperature, 
-                      messages: [...preconditionParsed.data.messages, { internalRole: 'user', role: 'user', content: message }],
+                      messages: [...preconditionParsed.data.messages, { internalRole: 'user', role: 'user', content: `Q: ${message}` }],
                     } : {
                       speaker: 'assistant-program',
                       model: cc.model,
                       temperature: cc.temperature,
-                      messages: [...cc.messages, { internalRole: 'user', role: 'user', content: message }],
+                      messages: [...cc.messages, { internalRole: 'user', role: 'user', content: `Q: ${message}` }],
                     }
                   }))
                   setMessage('')
