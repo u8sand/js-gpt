@@ -71,6 +71,8 @@ const initialPrecondition = {
 }
 
 const examples = [
+  "What's my IP Address?",
+  "How many divs are on this page?",
   "How many years until 32-bit Unix Timestamps become a problem?",
   "How many fibonacci numbers are prime below 1000?",
 ]
