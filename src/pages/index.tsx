@@ -288,10 +288,14 @@ export default function Home() {
                   <input type="checkbox" />
                   <div className="collapse-title text-xl font-medium">Pre-conditioning</div>
                   <div className="collapse-content">
-                    {chats[currentChat].messages.slice(0, chats[currentChat].n_preconditioning_messages).map(message => <Message {...message} />)}
+                    {chats[currentChat].messages
+                      .slice(0, chats[currentChat].n_preconditioning_messages)
+                      .map((message, i) => <Message key={i} {...message} />)}
                   </div>
                 </div>
-                {chats[currentChat].messages.slice(chats[currentChat].n_preconditioning_messages).map(message => <Message {...message} />)}
+                {chats[currentChat].messages
+                  .slice(chats[currentChat].n_preconditioning_messages)
+                  .map((message, i) => <Message key={i} {...message} />)}
               </div>}
             <div className='text-center p-2'>
               <form
@@ -329,7 +333,7 @@ export default function Home() {
                   <button type="submit" className="btn btn-ghost" disabled={!openapiKey || !message}><svg stroke="currentColor" fill="none" strokeWidth="2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 mr-1" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></button>
                 </div>
               </form>
-              <span className="prose text-sm">JS-GPT April 15 Version. Free Research Preview. JS-GPT may produce inaccurate information about people, places, or facts.</span>
+              <span className="prose text-sm">Free Research Preview. JS-GPT may produce inaccurate information about people, places, or facts.</span>
             </div>
           </main>
         </div>
@@ -348,6 +352,7 @@ export default function Home() {
               setCurrentChat(() => '0')
               setChats(() => initialChats)
             }}>Clear conversations</a></li>
+            <li><a href="https://github.com/u8sand/js-gpt" target='_blank'>GitHub</a></li>
           </ul>
         </div>
       </div>
