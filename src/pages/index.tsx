@@ -260,69 +260,72 @@ export default function Home() {
               </button>
             </div>
           </div>
-          <main className="container mx-auto flex-grow flex flex-col">
-            {chats[currentChat].speaker === 'welcome' ?
-              <div className="hero flex-grow">
-                <div className="hero-content text-center">
-                  <div className="prose">
+          <main className="container mx-auto flex-grow flex flex-col lg:max-h-screen">
+            <div className="flex-grow overflow-auto flex flex-col">
+              {chats[currentChat].speaker === 'welcome' ?
+                <div className="flex-grow flex flex-col justify-center items-center text-center">
+                  <div className="prose py-2">
                     <h1 className="font-bold"><span className="text-3xl">JS</span>&nbsp;<span className="text-5xl">GPT</span></h1>
                     <p>GPT--but answers are coded in Javascript and executed. This helps GPT overcome limitations like getting information about *today*, from external places via API, and provide more reliable calculations.</p>
                     <p>NOTE: This is a client-side application, all communication happens with <a href="https://platform.openai.com/">OpenAPI</a>, all persistent state is stored in <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage">localStorage</a>, all execution happens in <b>your</b> browser.</p>
+                  </div>
+                  <div className="prose py-2">
                     <h2 className="text-2xl">Settings</h2>
-                    <div className="flex flex-col">
-                      <div className="form-control w-full max-w-xs self-center">
-                        <label className="label">
-                          <span className="label-text">OpenAPI Key (stored only on your device)</span>
-                        </label>
-                        <input type="password" className="input input-bordered w-full max-w-xs" value={openapiKey} onChange={evt => {setOpenapiKey(() => evt.target.value)}} />
-                        <label className="label">
-                          <span>&nbsp;</span>
-                          <span className={classNames("label-text", {"text-green-600": !!openapiKey, "text-red-600": !openapiKey})}>required</span>
-                        </label>
-                      </div>
-                      <div className="form-control">
-                        <label className="label">
-                          <span className="label-text">System pre-conditioning (sent before your first message)</span>
-                        </label>
-                        <textarea className="textarea textarea-bordered h-24" value={precondition} onChange={evt => {setPrecondition(evt.target.value)}}></textarea>
-                        <label className="label">
-                          <span>&nbsp;</span>
-                          <span className={classNames("label-text", {"text-green-600": preconditionParsed.success, "text-red-600": !preconditionParsed.success})}>
-                            {preconditionParsed.success ? 'valid' : preconditionParsed.error.issues.map((issue, i) => <span key={i}>{issue.path.length > 0 ? `${issue.path.join('.')} : ` : null}{issue.message}</span>)}
-                          </span>
-                        </label>
-                      </div>
-                    </div>
+                  </div>
+                  <div className="form-control w-full max-w-xs self-center">
+                    <label className="label">
+                      <span className="label-text">OpenAPI Key (stored only on your device)</span>
+                    </label>
+                    <input type="password" className="input input-bordered w-full max-w-xs" value={openapiKey} onChange={evt => {setOpenapiKey(() => evt.target.value)}} />
+                    <label className="label">
+                      <span>&nbsp;</span>
+                      <span className={classNames("label-text", {"text-green-600": !!openapiKey, "text-red-600": !openapiKey})}>required</span>
+                    </label>
+                  </div>
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text">System pre-conditioning (sent before your first message)</span>
+                    </label>
+                    <textarea className="textarea textarea-bordered h-24" value={precondition} onChange={evt => {setPrecondition(evt.target.value)}}></textarea>
+                    <label className="label">
+                      <span>&nbsp;</span>
+                      <span className={classNames("label-text", {"text-green-600": preconditionParsed.success, "text-red-600": !preconditionParsed.success})}>
+                        {preconditionParsed.success ? 'valid' : preconditionParsed.error.issues.map((issue, i) => <span key={i}>{issue.path.length > 0 ? `${issue.path.join('.')} : ` : null}{issue.message}</span>)}
+                      </span>
+                    </label>
+                  </div>
+                  <div className="prose py-2">
                     <h2 className="text-2xl">Examples</h2>
-                    <div className="grid grid-cols-2 gap-2">
-                      {examples.map(example => (
-                        <div
-                          className="card bg-gray-200 hover:shadow-lg cursor-pointer"
-                          onClick={() => {setMessage(() => example)}}
-                        >
-                          <div className="card-body items-center text-center">
-                            <p>{example}</p>
-                          </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 max-w-xl">
+                    {examples.map((example, i) => (
+                      <div
+                        key={i}
+                        className="card bg-gray-200 hover:shadow-lg cursor-pointer"
+                        onClick={() => {setMessage(() => example)}}
+                      >
+                        <div className="card-body items-center text-center">
+                          <p>{example}</p>
                         </div>
-                      ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              : <div className="flex-grow flex flex-col">
+                  <div className="collapse collapse-plus bg-base-100">
+                    <input type="checkbox" />
+                    <div className="collapse-title text-xl font-medium">Pre-conditioning</div>
+                    <div className="collapse-content">
+                      {chats[currentChat].messages
+                        .slice(0, chats[currentChat].n_preconditioning_messages)
+                        .map((message, i) => <Message key={i} {...message} />)}
                     </div>
                   </div>
-                </div>
-              </div>
-            : <div className="flex-grow flex flex-col">
-                <div className="collapse collapse-plus bg-base-100">
-                  <input type="checkbox" />
-                  <div className="collapse-title text-xl font-medium">Pre-conditioning</div>
-                  <div className="collapse-content">
-                    {chats[currentChat].messages
-                      .slice(0, chats[currentChat].n_preconditioning_messages)
-                      .map((message, i) => <Message key={i} {...message} />)}
-                  </div>
-                </div>
-                {chats[currentChat].messages
-                  .slice(chats[currentChat].n_preconditioning_messages)
-                  .map((message, i) => <Message key={i} {...message} />)}
-              </div>}
+                  {chats[currentChat].messages
+                    .slice(chats[currentChat].n_preconditioning_messages)
+                    .map((message, i) => <Message key={i} {...message} />)}
+                </div>}
+            </div>
             <div className='text-center p-2'>
               <form
                 onSubmit={evt => {
