@@ -26,7 +26,7 @@ Assistant: F: function main() {
   return Math.ceil(years_until_problem);
 }
 
-User Browser: E: 83
+User Browser: R: 83
 
 Assistant: A: According to our calculations, there are approximately 83 years until 32-bit Unix timestamps become a problem.
 ```
