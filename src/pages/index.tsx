@@ -151,9 +151,12 @@ export default function Home() {
             }),
           })
           const res1 = await req1.json()
-          const message1 = res1.choices[0].message
+          let message1 = res1.choices[0].message
           if (!message1.content.startsWith('F:')) {
-            // assistent doesn't choose to call the function then we won't execute it as such
+            // assistant omits prefix altogether, we consider it an answer
+            if (!message1.content.startsWith('A:')) message1.content = `A: ${message1.content}`
+            // sometimes it writes something before the function we should probably show the user
+            let message1_content_split = message1.content.split('\nF:', 1)
             setChats(({ [currentChat]: cc, ...chats }) => ({
               ...chats, [currentChat]: {
                 speaker: 'user',
@@ -162,12 +165,13 @@ export default function Home() {
                 n_preconditioning_messages: cc.n_preconditioning_messages,
                 messages: [...cc.messages, {
                   role: message1.role,
-                  // assistant omits prefix altogether, we consider it an answer
-                  content: message1.content.startsWith('A:') ? message1.content : `A: ${message1.content}`
+                  content: message1_content_split[0],
                 }],
               }
             }))
-          } else {
+            message1.content = message1_content_split[1]
+          }
+          if (message1.content) {
             setChats(({ [currentChat]: cc, ...chats }) => ({
               ...chats, [currentChat]: {
                 speaker: 'js-engine',
