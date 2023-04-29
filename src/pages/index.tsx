@@ -75,8 +75,13 @@ export default function Home() {
     speaker: 'welcome' | 'user' | 'assistant-program' | 'js-engine' | 'assistant',
     model: string,
     temperature: number,
-    messages: { role: string, content : string }[]
-  }>>({ ['0']: { messages: [], model: initialPrecondition.model, temperature: initialPrecondition.temperature, speaker: 'welcome' } })
+    messages: { role: string, content : string }[],
+  }>>({ ['0']: {
+    messages: [],
+    model: initialPrecondition.model,
+    temperature: initialPrecondition.temperature,
+    speaker: 'welcome',
+  } })
   const [currentChat, setCurrentChat] = React.useState('0')
   const preconditionParsed = React.useMemo(() => SerializedChatGPTPrecondition.safeParse(precondition), [precondition])
   useAsyncEffect(async (isMounted) => {
@@ -101,65 +106,81 @@ export default function Home() {
           })
           const res1 = await req1.json()
           const message1 = res1.choices[0].message
-          setChats(({ [currentChat]: cc, ...chats }) => ({
-            ...chats, [currentChat]: {
-              speaker: 'js-engine',
-              model: cc.model,
-              temperature: cc.temperature,
-              messages: [...cc.messages, { role: message1.role, content: message1.content }],
-            }
-          }))
-          const code_expr = new RegExp('```(.+?)```', 'gms')
-          const code_match = code_expr.exec(message1.content)
-          let result: string
-          try {
-            const code = (code_match as RegExpExecArray)[1]
-            const ctx: any = {}
-            eval(`${code}\nObject.assign(ctx, { result: main() })`)
-            if (ctx.result instanceof Promise) ctx.result = await ctx.result
-            if (typeof ctx.result !== 'string') ctx.result = JSON.stringify(ctx.result)
-            result = `R: ${ctx.result}`
-          } catch (e) {
-            result = `E: ${serializeError(e)}`
-          }
-          console.log({ result })
-          setChats(({ [currentChat]: cc, ...chats }) => ({
-            ...chats, [currentChat]: {
-              speaker: 'assistant',
-              model: cc.model,
-              temperature: cc.temperature,
-              messages: [...cc.messages, { role: 'user', content: result }],
-            }
-          }))
-          const req2 = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-              'Authorization': `Bearer ${openapiKey}`,
-            },
-            body: JSON.stringify({
-              ...body,
-              messages: [
-                ...body.messages,
-                message1,
-                { role: 'user', content: result },
-              ],
-            }),
-          })
-          const res2 = await req2.json()
-          const message2 = res2.choices[0].message
-          setChats(({ [currentChat]: cc, ...chats }) => {
-            delete ref.current[chatId]
-            return {
+          if (!message1.content.startsWith('F:')) {
+            // assistent doesn't choose to call the function then we won't execute it as such
+            setChats(({ [currentChat]: cc, ...chats }) => ({
               ...chats, [currentChat]: {
                 speaker: 'user',
                 model: cc.model,
                 temperature: cc.temperature,
-                messages: [...cc.messages, { role: message2.role, content: message2.content }],
+                messages: [...cc.messages, {
+                  role: message1.role,
+                  // assistant omits prefix altogether, we consider it an answer
+                  content: message1.content.startsWith('A:') ? message1.content : `A: ${message1.content}`
+                }],
               }
+            }))
+          } else {
+            setChats(({ [currentChat]: cc, ...chats }) => ({
+              ...chats, [currentChat]: {
+                speaker: 'js-engine',
+                model: cc.model,
+                temperature: cc.temperature,
+                messages: [...cc.messages, { role: message1.role, content: message1.content }],
+              }
+            }))
+            const code_expr = new RegExp('```(.+?)```', 'gms')
+            const code_match = code_expr.exec(message1.content)
+            let result: string
+            try {
+              const code = (code_match as RegExpExecArray)[1]
+              const ctx: any = {}
+              eval(`${code}\nObject.assign(ctx, { result: main() })`)
+              if (ctx.result instanceof Promise) ctx.result = await ctx.result
+              if (typeof ctx.result !== 'string') ctx.result = JSON.stringify(ctx.result)
+              result = `R: ${ctx.result}`
+            } catch (e) {
+              result = `E: ${serializeError(e)}`
             }
-          })
+            console.log({ result })
+            setChats(({ [currentChat]: cc, ...chats }) => ({
+              ...chats, [currentChat]: {
+                speaker: 'assistant',
+                model: cc.model,
+                temperature: cc.temperature,
+                messages: [...cc.messages, { role: 'user', content: result }],
+              }
+            }))
+            const req2 = await fetch('https://api.openai.com/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${openapiKey}`,
+              },
+              body: JSON.stringify({
+                ...body,
+                messages: [
+                  ...body.messages,
+                  message1,
+                  { role: 'user', content: result },
+                ],
+              }),
+            })
+            const res2 = await req2.json()
+            const message2 = res2.choices[0].message
+            setChats(({ [currentChat]: cc, ...chats }) => {
+              delete ref.current[chatId]
+              return {
+                ...chats, [currentChat]: {
+                  speaker: 'user',
+                  model: cc.model,
+                  temperature: cc.temperature,
+                  messages: [...cc.messages, { role: message2.role, content: message2.content }],
+                }
+              }
+            })
+          }
           if (!isMounted()) return
         }
       }
@@ -225,7 +246,24 @@ export default function Home() {
                 </div>
               </div>
             : <div className="flex-grow flex flex-col">
-                {chats[currentChat].messages.map((message, i) => <span key={i} className="whitespace-pre-line">{message.role}: {message.content}</span>)}
+                {chats[currentChat].messages.map(({ role, content }, i) => {
+                  const kind = role === 'system' ? 'System Preconditioning'
+                    : role === 'user' && content.startsWith('Q:') ? 'User Query'
+                    : role === 'assistant' && content.startsWith('F:') ? 'Assistant Function'
+                    : role === 'user' && content.startsWith('R:') ? 'Execution Result'
+                    : role === 'user' && content.startsWith('E:') ? 'Execution Error'
+                    : role === 'assistant' && content.startsWith('A:') ? 'Assistant Answer'
+                    : null
+                  return (
+                    <div key={i} className="collapse collapse-plus bg-base-100">
+                      <input type="checkbox" defaultChecked={kind === 'User Query' || kind === 'Assistant Answer'} />
+                      <div className="collapse-title text-xl font-medium">{kind}</div>
+                      <div className="collapse-content whitespace-pre-line">
+                        <p>{content.slice(3)}</p>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>}
             <div className='text-center p-2'>
               <form
@@ -270,7 +308,12 @@ export default function Home() {
           <ul className="menu p-4 w-80 bg-base-100 text-base-content">
             <li><a onClick={() => {
               const newChatKey = (Object.keys(chats).reduce((agg, chatKey) => Math.max(agg, +chatKey), 0)+1).toString()
-              setChats((chats) => ({ ...chats, [newChatKey]: { speaker: 'welcome', model: initialPrecondition.model, temperature: initialPrecondition.temperature, messages: [] } }))
+              setChats((chats) => ({ ...chats, [newChatKey]: {
+                speaker: 'welcome',
+                model: initialPrecondition.model,
+                temperature: initialPrecondition.temperature,
+                messages: [],
+              } }))
               setCurrentChat(newChatKey)
             }}>+ New chat</a></li>
             {Object.keys(chats)
