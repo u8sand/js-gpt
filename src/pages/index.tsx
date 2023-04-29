@@ -75,7 +75,7 @@ export default function Home() {
     speaker: 'welcome' | 'user' | 'assistant-program' | 'js-engine' | 'assistant',
     model: string,
     temperature: number,
-    messages: { internalRole?: string, role: string, content : string }[]
+    messages: { role: string, content : string }[]
   }>>({ ['0']: { messages: [], model: initialPrecondition.model, temperature: initialPrecondition.temperature, speaker: 'welcome' } })
   const [currentChat, setCurrentChat] = React.useState('0')
   const preconditionParsed = React.useMemo(() => SerializedChatGPTPrecondition.safeParse(precondition), [precondition])
@@ -96,7 +96,7 @@ export default function Home() {
             body: JSON.stringify({
               model: body.model,
               temperature: body.temperature,
-              messages: body.messages.map(({ role, content }) => ({ role, content })),
+              messages: body.messages,
             }),
           })
           const res1 = await req1.json()
@@ -106,7 +106,7 @@ export default function Home() {
               speaker: 'js-engine',
               model: cc.model,
               temperature: cc.temperature,
-              messages: [...cc.messages, { internalRole: 'assistant-program', role: message1.role, content: message1.content }],
+              messages: [...cc.messages, { role: message1.role, content: message1.content }],
             }
           }))
           const code_expr = new RegExp('```(.+?)```', 'gms')
@@ -128,7 +128,7 @@ export default function Home() {
               speaker: 'assistant',
               model: cc.model,
               temperature: cc.temperature,
-              messages: [...cc.messages, { internalRole: 'js-engine', role: 'user', content: result }],
+              messages: [...cc.messages, { role: 'user', content: result }],
             }
           }))
           const req2 = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -141,7 +141,7 @@ export default function Home() {
             body: JSON.stringify({
               ...body,
               messages: [
-                ...body.messages.map(({ role, content }) => ({ role, content })),
+                ...body.messages,
                 message1,
                 { role: 'user', content: result },
               ],
@@ -156,7 +156,7 @@ export default function Home() {
                 speaker: 'user',
                 model: cc.model,
                 temperature: cc.temperature,
-                messages: [...cc.messages, { internalRole: 'assistant', role: message2.role, content: message2.content }],
+                messages: [...cc.messages, { role: message2.role, content: message2.content }],
               }
             }
           })
@@ -236,12 +236,12 @@ export default function Home() {
                       speaker: 'assistant-program',
                       model: preconditionParsed.data.model,
                       temperature: preconditionParsed.data.temperature, 
-                      messages: [...preconditionParsed.data.messages, { internalRole: 'user', role: 'user', content: `Q: ${message}` }],
+                      messages: [...preconditionParsed.data.messages, { role: 'user', content: `Q: ${message}` }],
                     } : {
                       speaker: 'assistant-program',
                       model: cc.model,
                       temperature: cc.temperature,
-                      messages: [...cc.messages, { internalRole: 'user', role: 'user', content: `Q: ${message}` }],
+                      messages: [...cc.messages, { role: 'user', content: `Q: ${message}` }],
                     }
                   }))
                   setMessage('')
