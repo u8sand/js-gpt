@@ -244,7 +244,7 @@ export default function Home() {
                   </div>
                   <div className="form-control w-full max-w-xs self-center">
                     <label className="label">
-                      <span className="label-text">OpenAI Key (stored only on your device)</span>
+                      <span className="label-text"><a className="link" href="https://platform.openai.com/account/api-keys" target='_blank'>OpenAI Key</a> (stored only on your device)</span>
                     </label>
                     <input type="password" className="input input-bordered w-full max-w-xs" value={openaiKey} onChange={evt => {setOpenaiKey(() => evt.target.value)}} />
                     <label className="label">
